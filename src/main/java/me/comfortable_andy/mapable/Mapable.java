@@ -26,6 +26,10 @@ public class Mapable {
      * @throws ReflectiveOperationException
      */
     public static Map<String, Object> asMap(Object toMap) throws ReflectiveOperationException {
+        if (toMap == null) {
+            return null;
+        }
+
         Map<String, Object> map = new HashMap<>();
         map.put("==", toMap.getClass().getName());
 

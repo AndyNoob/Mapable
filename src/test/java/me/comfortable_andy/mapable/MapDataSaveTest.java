@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -15,18 +16,18 @@ public class MapDataSaveTest {
 
     public static void main(String[] args) {
         MyDataB b = new MyDataB(420, false, "wssup");
-        MyDataA a = new MyDataA(69, 'b', "sup bro", b);
+        MyDataA a = new MyDataA(69, 'b', "sup bro", null); // support null
 
         try {
-            Map<String, Object> map = Mapable.asMap(a);
+            Map<String, Object> map = Mapable.asMap(new MyDataA[]{a}); // support array
 
             System.out.println("Printing out map with the serialized data:");
             System.out.println(map + "\n");
 
-            MyDataA retrieved = (MyDataA) Mapable.fromMap(map);
+            MyDataA[] retrieved = (MyDataA[]) Mapable.fromMap(map);
 
             System.out.println("Printing out deserialized data:");
-            System.out.println(retrieved);
+            System.out.println(Arrays.toString(retrieved));
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
         }
