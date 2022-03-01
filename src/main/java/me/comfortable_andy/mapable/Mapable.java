@@ -1,5 +1,7 @@
 package me.comfortable_andy.mapable;
 
+import sun.misc.Unsafe;
+
 import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -16,6 +18,25 @@ import java.util.Map;
  * @apiNote Requires an empty constructor for the deserializing process
  */
 public class Mapable {
+
+    /**
+     * @see Unsafe#allocateInstance(Class)
+     */
+    public static boolean BRUTE_FORCE = false;
+
+    private static Unsafe unsafe;
+
+    static {
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            boolean accessible = field.isAccessible();
+            field.setAccessible(true);
+            unsafe = (Unsafe) field.get(null);
+            field.setAccessible(accessible);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Uses reflection to retrieve all fields from the parameter and uses recursion in the case
@@ -106,7 +127,17 @@ public class Mapable {
             return array;
         }
 
-        Object object = clazz.newInstance();
+        Object object = null;
+
+        try {
+            object = clazz.newInstance();
+        } catch (ReflectiveOperationException e) {
+            object = BRUTE_FORCE ? forceCreate(clazz) : null;
+        }
+
+        if (object == null) {
+            return null;
+        }
 
         for (Field field : object.getClass().getDeclaredFields()) {
             if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
@@ -140,6 +171,10 @@ public class Mapable {
         }
 
         return object;
+    }
+
+    private static <V> V forceCreate(Class<V> vClass) throws ReflectiveOperationException {
+        return (V) unsafe.allocateInstance(vClass);
     }
 
     /**

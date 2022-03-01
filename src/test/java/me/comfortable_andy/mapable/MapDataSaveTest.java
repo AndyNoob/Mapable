@@ -19,6 +19,7 @@ public class MapDataSaveTest {
         MyDataA a = new MyDataA(69, 'b', "sup bro", null); // support null
 
         try {
+            Mapable.BRUTE_FORCE = true;
             Map<String, Object> map = Mapable.asMap(new MyDataA[]{a}); // support array
 
             System.out.println("Printing out map with the serialized data:");
@@ -46,8 +47,8 @@ public class MapDataSaveTest {
         @Mapable.MapMe
         private MyDataB myDataB;
 
-        public MyDataA() {
-        }
+        /*public MyDataA() {
+        }*/ // this will be created using brute force
 
         public MyDataA(float a, char b, String name, MyDataB myDataB) {
             this.a = a;
