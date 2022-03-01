@@ -20,6 +20,7 @@ public class MapDataSaveTest {
 
         try {
             Mapable.BRUTE_FORCE = true;
+            Mapable.REQUIRE_ANNOTATION = false;
             Map<String, Object> map = Mapable.asMap(new MyDataA[]{a}); // support array
 
             System.out.println("Printing out map with the serialized data:");
@@ -44,7 +45,6 @@ public class MapDataSaveTest {
         private char b;
         @Mapable.MapMe
         private String name;
-        @Mapable.MapMe
         private MyDataB myDataB;
 
         /*public MyDataA() {

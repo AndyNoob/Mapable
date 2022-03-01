@@ -23,6 +23,7 @@ public class Mapable {
      * @see Unsafe#allocateInstance(Class)
      */
     public static boolean BRUTE_FORCE = false;
+    public static boolean REQUIRE_ANNOTATION = true;
 
     private static Unsafe unsafe;
 
@@ -74,11 +75,12 @@ public class Mapable {
 
             MapMe mapTo = field.getAnnotation(MapMe.class);
 
-            if (mapTo == null) {
+            if (mapTo == null && REQUIRE_ANNOTATION) {
                 continue;
             }
 
-            String name = !mapTo.mapName().equals("") ? mapTo.mapName() : field.getName();
+            String name = mapTo != null && !mapTo.mapName().equals("") ? mapTo.mapName() :
+                    field.getName();
             Object value = field.get(toMap);
 
             if (!(value instanceof Serializable)) {
@@ -149,11 +151,12 @@ public class Mapable {
 
             MapMe mapTo = field.getAnnotation(MapMe.class);
 
-            if (mapTo == null) {
+            if (mapTo == null && REQUIRE_ANNOTATION) {
                 continue;
             }
 
-            String name = !mapTo.mapName().equals("") ? mapTo.mapName() : field.getName();
+            String name = mapTo != null && !mapTo.mapName().equals("") ? mapTo.mapName() :
+                    field.getName();
             Object value = map.get(name);
 
             if (value instanceof Map) {
