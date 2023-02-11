@@ -1,6 +1,8 @@
 package me.comfortable_andy.mapable;
 
-import sun.misc.Unsafe;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import sun.reflect.ReflectionFactory;
 
 import java.io.Serializable;
 import java.lang.annotation.Retention;
@@ -8,88 +10,87 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Supports multi-dimension array.
  *
  * @author AndyNoob
- * @apiNote Requires an empty constructor for the deserializing process
  */
-public class Mapable {
+public final class Mapable {
 
-    /**
-     * @see Unsafe#allocateInstance(Class)
-     */
-    public static boolean BRUTE_FORCE = false;
-    public static boolean REQUIRE_ANNOTATION = true;
+    private static final Logger LOGGER = Logger.getLogger("Mapable");
+    private static final Map<Class, Map<String, Field>> CACHE = new ConcurrentHashMap<>();
 
-    private static Unsafe unsafe;
+    private final boolean needAnnotation, mapSerializable, assumeEmptyConstructor, useEnumName, log;
 
-    static {
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            boolean accessible = field.isAccessible();
-            field.setAccessible(true);
-            unsafe = (Unsafe) field.get(null);
-            field.setAccessible(accessible);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public Mapable(boolean needAnnotation, boolean mapSerializable, boolean assumeEmptyConstructor, boolean useEnumName, boolean log) {
+        this.needAnnotation = needAnnotation;
+        this.mapSerializable = mapSerializable;
+        this.assumeEmptyConstructor = assumeEmptyConstructor;
+        this.useEnumName = useEnumName;
+        this.log = log;
+    }
+
+    public Map<String, Object> asMap(@NotNull final Object toMap) throws ReflectiveOperationException {
+        return asMap(toMap, null);
     }
 
     /**
      * Uses reflection to retrieve all fields from the parameter and uses recursion in the case
      * of arrays or un-serializable fields.
      *
-     * @param toMap The object used to map.
+     * @param toMap The object used to map (null if clazz is an interface or annotation).
      * @return Serialized data in map.
-     * @throws ReflectiveOperationException
      */
-    public static Map<String, Object> asMap(Object toMap) throws ReflectiveOperationException {
-        if (toMap == null) {
-            return null;
-        }
+    @Nullable
+    public <T> Map<String, Object> asMap(@NotNull final T toMap, @Nullable Class<T> clazz) throws ReflectiveOperationException {
+        LOGGER.setLevel(log ? Level.ALL : Level.OFF);
+        //noinspection unchecked
+        clazz = clazz == null ? (Class<T>) toMap.getClass() : clazz; // WTF java so weird
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("==", toMap.getClass().getName());
+        if (clazz.isInterface() || clazz.isAnnotation()) return null;
 
-        if (toMap.getClass().isArray()) {
-            Object[] array = (Object[]) toMap;
+        final Map<String, Object> map = new HashMap<>();
 
-            for (int i = 0; i < array.length; i++) {
-                map.put(i + "", asMap(array[i]));
-            }
+        map.put("==", clazz.getName());
+
+        if (clazz.isArray()) {
+            LOGGER.info(clazz + " is array!");
+            final Object[] array = (Object[]) toMap;
+
+            for (int i = 0; i < array.length; i++) map.put(String.valueOf(i), asMap(array[i]));
 
             return map;
+        } else if (clazz.isEnum()) {
+            LOGGER.info(clazz + " is enum!");
+            if (this.useEnumName) map.put("name", toMap);
+            else map.put("ordinal", Arrays.asList(clazz.getEnumConstants()).indexOf(toMap));
+            return map;
+        } else if (clazz.isPrimitive()) {
+            LOGGER.info(clazz + " is primitive!");
+            map.put("value", toMap);
         }
 
-        for (Field field : toMap.getClass().getDeclaredFields()) {
-            if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
+        for (final Map.Entry<String, Field> entry : findApplicableFields(clazz, new HashMap<>()).entrySet()) {
+            final String name = entry.getKey();
+            final Field field = entry.getValue();
 
-            boolean accessible = field.isAccessible();
-            field.setAccessible(true);
-
-            MapMe mapTo = field.getAnnotation(MapMe.class);
-
-            if (mapTo == null && REQUIRE_ANNOTATION) {
-                continue;
-            }
-
-            String name = mapTo != null && !mapTo.mapName().equals("") ? mapTo.mapName() :
-                    field.getName();
             Object value = field.get(toMap);
 
-            if (!(value instanceof Serializable)) {
-                value = asMap(value);
+            if (!(value instanceof Serializable) && this.mapSerializable) {
+                LOGGER.info(field + " is not serializable, attempting to map...");
+                try {
+                    value = asMap(value);
+                } catch (Exception e) {
+                    throw new IllegalStateException("Couldn't map " + toMap + " (" + clazz + ")", e);
+                }
             }
 
             map.put(name, value);
-
-            field.setAccessible(accessible);
         }
 
         return map;
@@ -101,83 +102,93 @@ public class Mapable {
      *
      * @param map Serialized object in <code>Mapable#asMap</code>.
      * @return Deserialized object.
-     * @throws ReflectiveOperationException
      * @see #asMap(Object)
      */
-    public static Object fromMap(Map<String, Object> map) throws ReflectiveOperationException {
-        if (!map.containsKey("==")) {
-            return null;
-        }
+    public Object fromMap(final Map<String, Object> map) throws ReflectiveOperationException {
+        if (!map.containsKey("==")) throw new IllegalArgumentException("Invalid map! Should contain a \"==\" property!");
 
-        Class<?> clazz = Class.forName(map.getOrDefault("==", "java.lang.Object").toString());
+        LOGGER.setLevel(log ? Level.ALL : Level.OFF);
+
+        final Class<?> clazz = Class.forName(map.get("==").toString());
 
         if (clazz.isArray()) {
-            Object array = Array.newInstance(clazz.getComponentType(), map.size() - 1);
-            Class<?> accepted = array.getClass().getComponentType();
+            LOGGER.info(clazz + " is array!");
+            final Object array = Array.newInstance(clazz.getComponentType(), map.size() - 1);
+            final Class<?> accepted = array.getClass().getComponentType();
 
             for (int i = 0; i < map.size(); i++) {
-                Object o = map.get(i + "");
+                final Object o = map.get(i + "");
 
-                if (!(o instanceof Map)) {
-                    continue;
+                if (!(o instanceof Map)) continue;
+
+                try {
+                    Array.set(array, i, accepted.cast(fromMap((Map<String, Object>) o)));
+                } catch (Exception e) {
+                    throw new IllegalStateException("Couldn't unmap array val " + o, e);
                 }
-
-                o = fromMap((Map<String, Object>) o);
-                Array.set(array, i, accepted.cast(o));
             }
 
             return array;
+        } else if (clazz.isEnum()) {
+            LOGGER.info(clazz + " is enum!");
+            if (useEnumName) return Enum.valueOf((Class<? extends Enum>) clazz, map.get("name").toString());
+            else return clazz.getEnumConstants()[Integer.parseInt(map.get("ordinal").toString())];
         }
 
-        Object object = null;
+        Object object;
 
         try {
-            object = clazz.newInstance();
-        } catch (ReflectiveOperationException e) {
-            object = BRUTE_FORCE ? forceCreate(clazz) : null;
+            object = clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            try {
+                object = ReflectionFactory.getReflectionFactory().newConstructorForSerialization(clazz, Object.class.getDeclaredConstructor()).newInstance();
+            } catch (Exception ex) {
+                throw new IllegalStateException("Couldn't use ReflectionFactory to instantiate object", ex);
+            }
         }
 
-        if (object == null) {
-            return null;
-        }
-
-        for (Field field : object.getClass().getDeclaredFields()) {
-            if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
-
-            boolean accessible = field.isAccessible();
-            field.setAccessible(true);
-
-            MapMe mapTo = field.getAnnotation(MapMe.class);
-
-            if (mapTo == null && REQUIRE_ANNOTATION) {
-                continue;
-            }
-
-            String name = mapTo != null && !mapTo.mapName().equals("") ? mapTo.mapName() :
-                    field.getName();
+        for (final Map.Entry<String, Field> entry : findApplicableFields(clazz, new HashMap<>()).entrySet()) {
+            final String name = entry.getKey();
+            final Field field = entry.getValue();
             Object value = map.get(name);
 
             if (value instanceof Map) {
-                Map<?, ?> valueMap = (Map<?, ?>) value;
-                value = fromMap((Map<String, Object>) valueMap);
+                try {
+                    value = fromMap((Map<String, Object>) value);
+                } catch (Exception e) {
+                    throw new IllegalStateException("Couldn't unmap " + value + " for unmapping " + clazz, e);
+                }
             }
 
-            if (value == null) {
-                continue;
-            }
+            if (value == null) continue;
 
             field.set(object, value);
-
-            field.setAccessible(accessible);
         }
 
         return object;
     }
 
-    private static <V> V forceCreate(Class<V> vClass) throws ReflectiveOperationException {
-        return (V) unsafe.allocateInstance(vClass);
+    @NotNull
+    private Map<String, Field> findApplicableFields(final @NotNull Class<?> clazz, final @NotNull Map<String, Field> fields) {
+        if (CACHE.containsKey(clazz)) {
+            LOGGER.info("Returning from cache (" + clazz + ")");
+            return CACHE.get(clazz);
+        }
+
+        for (final Field field : clazz.getDeclaredFields()) {
+            if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) continue;
+            if (!field.trySetAccessible()) continue;
+
+            final MapMe mapTo = field.getAnnotation(MapMe.class);
+
+            fields.put(mapTo != null && !mapTo.mapName().isEmpty() ? mapTo.mapName() : field.getName(), field);
+        }
+
+        if (clazz.getSuperclass() == null) {
+            LOGGER.info("Caching field data (" + clazz + ")");
+            CACHE.put(clazz, new ConcurrentHashMap<>(fields));
+            return fields;
+        } else return findApplicableFields(clazz, fields);
     }
 
     /**
@@ -193,5 +204,42 @@ public class Mapable {
          * Default variable name
          */
         String mapName() default "";
+    }
+
+    public static class MapableBuilder {
+        private boolean needAnnotation = false;
+        private boolean mapSerializable = true;
+        private boolean assumeEmptyConstructor = true;
+        private boolean useEnumName = true;
+        private boolean log = false;
+
+        public MapableBuilder setNeedAnnotation(boolean needAnnotation) {
+            this.needAnnotation = needAnnotation;
+            return this;
+        }
+
+        public MapableBuilder setMapSerializable(boolean mapSerializable) {
+            this.mapSerializable = mapSerializable;
+            return this;
+        }
+
+        public MapableBuilder setAssumeEmptyConstructor(boolean assumeEmptyConstructor) {
+            this.assumeEmptyConstructor = assumeEmptyConstructor;
+            return this;
+        }
+
+        public MapableBuilder setUseEnumName(boolean useEnumName) {
+            this.useEnumName = useEnumName;
+            return this;
+        }
+
+        public MapableBuilder setLog(boolean log) {
+            this.log = log;
+            return this;
+        }
+
+        public Mapable createMapable() {
+            return new Mapable(needAnnotation, mapSerializable, assumeEmptyConstructor, useEnumName, log);
+        }
     }
 }

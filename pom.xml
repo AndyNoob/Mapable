@@ -6,7 +6,7 @@
 
     <groupId>me.comfortable_andy</groupId>
     <artifactId>Mapable</artifactId>
-    <version>1.0</version>
+    <version>2.0</version>
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -14,9 +14,39 @@
             <version>1.18.22</version>
             <scope>test</scope>
         </dependency>
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>23.0.0</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>RELEASE</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>9</source>
+          <target>9</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
-    <properties>
+  <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
