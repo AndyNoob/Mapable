@@ -6,7 +6,7 @@
 
     <groupId>me.comfortable_andy</groupId>
     <artifactId>Mapable</artifactId>
-    <version>3.0</version>
+    <version>3.1</version>
     <dependencies>
       <dependency>
         <groupId>org.jetbrains</groupId>
