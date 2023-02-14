@@ -6,13 +6,14 @@ import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked","unused"})
 public final class ResolverRegistry {
 
     private static final ResolverRegistry INSTANCE = new ResolverRegistry();
@@ -38,7 +39,7 @@ public final class ResolverRegistry {
 
     @Nullable
     public <R> R ifPresent(final @NotNull Class<?> clazz, @NotNull final Function<List<IResolver>, R> function) {
-        final List<IResolver> resolver = this.resolvers.stream().filter(iResolver -> iResolver.getResolvableTypes().stream().anyMatch(clazs -> clazs.isAssignableFrom(clazz))).collect(Collectors.toList());
+        final List<IResolver> resolver = this.resolvers.stream().filter(iResolver -> iResolver.getResolvableTypes().stream().anyMatch(clazs -> clazs.isAssignableFrom(clazz))).sorted(Comparator.comparing(IResolver::getPriority)).collect(Collectors.toList());
         return function.apply(resolver);
     }
 
@@ -54,6 +55,12 @@ public final class ResolverRegistry {
 
     public static ResolverRegistry getInstance() {
         return INSTANCE;
+    }
+
+    public enum ResolverPriority {
+        HIGH,
+        DEFAULT,
+        LOW
     }
 
 }

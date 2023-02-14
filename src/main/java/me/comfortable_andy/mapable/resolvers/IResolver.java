@@ -10,11 +10,14 @@ import java.util.List;
 
 public interface IResolver {
 
-    @NotNull
-    List<Class<?>> getResolvableTypes();
+    @NotNull List<Class<?>> getResolvableTypes();
 
-    @Nullable
-    ResolvedField resolve(@NotNull final ResolvableField field);
+    @NotNull default ResolverRegistry.ResolverPriority getPriority() {
+        return ResolverRegistry.ResolverPriority.DEFAULT;
+    }
+
+    @Nullable ResolvedField resolve(@NotNull final ResolvableField field);
 
     @Nullable Object unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info);
+
 }

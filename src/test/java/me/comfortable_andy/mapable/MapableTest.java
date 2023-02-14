@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MapableTest {
 
-
     //region Classes
     @EqualsAndHashCode
     @RequiredArgsConstructor
