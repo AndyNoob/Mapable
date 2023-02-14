@@ -68,7 +68,6 @@ public final class Mapable {
             final ResolvableField field = new ResolvableField(info, javaField.get(toMap), this);
 
             if (field.getValue() == null) continue;
-            if (field.getValue() instanceof Map) throw new IllegalStateException("Cannot map a map!");
             if (field.getValue() instanceof Serializable && !this.mapSerializable) {
                 debug("Mapped serializable " + field.getValue());
                 map.put(name, field.getValue());
