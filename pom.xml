@@ -6,14 +6,8 @@
 
     <groupId>me.comfortable_andy</groupId>
     <artifactId>Mapable</artifactId>
-    <version>2.0</version>
+    <version>3.0</version>
     <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.22</version>
-            <scope>test</scope>
-        </dependency>
       <dependency>
         <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
@@ -31,6 +25,12 @@
         <artifactId>junit-jupiter</artifactId>
         <version>RELEASE</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.26</version>
+        <scope>compile</scope>
       </dependency>
     </dependencies>
   <build>
