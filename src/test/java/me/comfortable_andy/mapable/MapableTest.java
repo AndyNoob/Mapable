@@ -75,6 +75,16 @@ public class MapableTest {
     public static class SerializableClass implements Serializable {
         private final int integer;
     }
+
+    @EqualsAndHashCode(callSuper = true)
+    @ToString
+    public static class ClassWithParent extends SerializableClass {
+
+        public ClassWithParent(int integer) {
+            super(integer);
+        }
+    }
+
     //endregion
 
     private final Mapable annotationRequired = new MapableBuilder().setLog(true).setNeedAnnotation(true).createMapable(), annotationNotRequired = new MapableBuilder().setLog(true).setNeedAnnotation(false).createMapable(), mapSerializable = new MapableBuilder().setLog(true).setMapSerializable(true).createMapable(), dontMapSerializable = new MapableBuilder().setLog(true).setMapSerializable(false).createMapable();
@@ -163,6 +173,13 @@ public class MapableTest {
         final Map<String, Object> listMap = annotationNotRequired.asMap(withList);
         System.out.println(listMap);
         assertEquals(withList.list, annotationNotRequired.fromMap(listMap, ClassWithList.class).list);
+    }
+
+    @Test
+    public void mapRoundHouse_ClassWithParent_Success() throws ReflectiveOperationException {
+        final ClassWithParent withParent = new ClassWithParent(52395);
+        final Map<String, Object> map = annotationNotRequired.asMap(withParent);
+        assertEquals(withParent, annotationNotRequired.fromMap(map, ClassWithParent.class));
     }
 
 }
