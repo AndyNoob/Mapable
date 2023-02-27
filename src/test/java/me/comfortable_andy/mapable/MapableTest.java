@@ -5,10 +5,7 @@ import me.comfortable_andy.mapable.resolvers.ResolverRegistry;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static me.comfortable_andy.mapable.MapableConstants.CLAZZ_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -180,6 +177,20 @@ public class MapableTest {
         final ClassWithParent withParent = new ClassWithParent(52395);
         final Map<String, Object> map = annotationNotRequired.asMap(withParent);
         assertEquals(withParent, annotationNotRequired.fromMap(map, ClassWithParent.class));
+    }
+
+    @Test
+    public void fromMap_FedWithPrimitiveWrappers_Success() throws ReflectiveOperationException {
+        final Map<String, Object> map = new HashMap<>() {{
+            put("someInteger", 32523);
+            put("someDouble", 23532.3225);
+            put("str", "urhgurhuirehegriuhgerhiuegruhi");
+        }};
+        final ClassWithoutAnnotation object = annotationNotRequired.fromMap(map, ClassWithoutAnnotation.class);
+        System.out.println(object);
+        assertEquals(map.get("someDouble"), object.someDouble);
+        assertEquals(map.get("someInteger"), object.someInteger);
+        assertEquals(map.get("str"), object.str);
     }
 
 }
