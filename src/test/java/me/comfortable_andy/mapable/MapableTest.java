@@ -180,10 +180,10 @@ public class MapableTest {
     }
 
     @Test
-    public void fromMap_FedWithPrimitiveWrappers_Success() throws ReflectiveOperationException {
+    public void fromMap_FedWithPrimitiveWrappers_Success() {
         final Map<String, Object> map = new HashMap<>() {{
-            put("someInteger", 32523);
-            put("someDouble", 23532.3225);
+            put("someInteger", Integer.valueOf(32523));
+            put("someDouble", Double.valueOf(23532.3225));
             put("str", "urhgurhuirehegriuhgerhiuegruhi");
         }};
         final ClassWithoutAnnotation object = annotationNotRequired.fromMap(map, ClassWithoutAnnotation.class);

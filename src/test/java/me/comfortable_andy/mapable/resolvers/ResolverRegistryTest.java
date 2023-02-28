@@ -38,7 +38,7 @@ class ResolverRegistryTest {
         }
 
         @Override
-        public @Nullable Object unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
+        public @Nullable ResolvableField unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
             throw new RuntimeException();
         }
     }
@@ -71,13 +71,9 @@ class ResolverRegistryTest {
     @Test
     void resolve() {
         RESOLVER.setPriority(ResolverRegistry.ResolverPriority.HIGH);
-        assertThrowsExactly(RuntimeException.class, () -> {
-            System.out.println(ResolverRegistry.getInstance().resolve(Integer.class, FIELD));
-        });
+        assertThrowsExactly(RuntimeException.class, () -> System.out.println(ResolverRegistry.getInstance().resolve(Integer.class, FIELD)));
         RESOLVER.setPriority(ResolverRegistry.ResolverPriority.LOW);
-        assertDoesNotThrow(() -> {
-            System.out.println(ResolverRegistry.getInstance().resolve(Integer.class, FIELD));
-        });
+        assertDoesNotThrow(() -> System.out.println(ResolverRegistry.getInstance().resolve(Integer.class, FIELD)));
     }
 
 }

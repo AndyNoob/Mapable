@@ -18,6 +18,6 @@ public interface IResolver {
 
     @Nullable ResolvedField resolve(@NotNull final ResolvableField field);
 
-    @Nullable Object unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info);
+    @Nullable ResolvableField unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info);
 
 }

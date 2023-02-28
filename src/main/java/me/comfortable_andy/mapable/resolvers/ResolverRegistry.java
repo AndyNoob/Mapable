@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"unchecked","unused"})
+@SuppressWarnings({"unused"})
 public final class ResolverRegistry {
 
     private static final ResolverRegistry INSTANCE = new ResolverRegistry();
@@ -49,8 +49,8 @@ public final class ResolverRegistry {
     }
 
     @Nullable
-    public <T> T unresolve(final @NotNull Class<T> clazz, final @NotNull ResolvedField field, final @NotNull FieldInfo info) {
-        return (T) ifPresent(clazz, resolvers -> resolvers.stream().map(resolver -> resolver.unresolve(field, info)).filter(Objects::nonNull).findFirst().orElse(null));
+    public <T> ResolvableField unresolve(final @NotNull Class<T> clazz, final @NotNull ResolvedField field, final @NotNull FieldInfo info) {
+        return ifPresent(clazz, resolvers -> resolvers.stream().map(resolver -> resolver.unresolve(field, info)).filter(Objects::nonNull).findFirst().orElse(null));
     }
 
     public static ResolverRegistry getInstance() {

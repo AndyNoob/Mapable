@@ -5,7 +5,6 @@ import me.comfortable_andy.mapable.resolvers.ResolverRegistry;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
-import me.comfortable_andy.mapable.resolvers.data.SingleResolvedField;
 import me.comfortable_andy.mapable.util.ClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +63,7 @@ public final class Mapable {
             final String name = entry.getKey();
             final Field javaField = entry.getValue();
 
-            final FieldInfo info = new FieldInfo(javaField.getType());
+            final FieldInfo info = new FieldInfo(javaField.getType()).setGenericsType(javaField.getGenericType());
             final ResolvableField field = new ResolvableField(info, javaField.get(toMap), this);
 
             if (field.getValue() == null) continue;
@@ -96,13 +95,16 @@ public final class Mapable {
      * @return Deserialized object.
      * @see #asMap(Object)
      */
-    public <T> T fromMap(final @NotNull Map<String, Object> map, @Nullable Class<T> clazz) throws ReflectiveOperationException {
-        if (clazz == null) clazz = ClassUtil.fromName(String.valueOf(map.get(CLAZZ_KEY)));
+    public <T> T fromMap(final @NotNull Map<String, Object> map, @Nullable Class<T> clazz) {
+        if (clazz == null) clazz = ClassUtil.fromNameOrNull(String.valueOf(map.get(CLAZZ_KEY)));
         if (clazz == null) throw new IllegalStateException("Couldn't identify class!");
 
-        if (isPrimitiveOrString(clazz) || clazz.isArray() || clazz.isAnnotation() || clazz.isEnum() || clazz.isAnonymousClass() || clazz.getPackageName().startsWith("java") || clazz.getPackageName().startsWith("sun")) throw new IllegalArgumentException(clazz + " is not supported (try wrapping it in your own class)!");
+        if (isPrimitiveOrString(clazz) || clazz.isArray() || clazz.isAnnotation() || clazz.isEnum() || clazz.isAnonymousClass() || clazz.getPackageName().startsWith("java") || clazz.getPackageName().startsWith("sun"))
+            throw new IllegalArgumentException(clazz + " is not supported (try wrapping it in your own class)!");
 
         final T object = ClassUtil.construct(clazz, true);
+
+        if (object == null) throw new IllegalStateException("Couldn't initialize a desired object!");
 
         for (final Map.Entry<String, Field> entry : findApplicableFields(clazz, new HashMap<>()).entrySet()) {
             final String name = entry.getKey();
@@ -118,12 +120,25 @@ public final class Mapable {
                 } catch (ReflectiveOperationException ignored) {
                 }
             } else if (!(value instanceof Serializable && !this.mapSerializable)) {
-                final FieldInfo info = new FieldInfo(javaField.getType());
-                final SingleResolvedField field = new SingleResolvedField(javaField.getType(), map.get(name), this);
-                value = ResolverRegistry.getInstance().unresolve(javaField.getType(), field, info);
+                final FieldInfo info = new FieldInfo(javaField.getType()).setGenericsType(javaField.getGenericType());
+                final ResolvedField field = new ResolvedField(javaField.getType(), map.get(name), this);
+
+                try {
+                    final ResolvableField unresolved = ResolverRegistry.getInstance().unresolve(javaField.getType(), field, info);
+                    if (unresolved == null) continue;
+                    unresolved.applyToJavaField(object, javaField);
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException("Couldn't set " + javaField.getName() + " to " + value + " using the unresolved value", e);
+                }
+
+                continue;
             }
 
-            javaField.set(object, value);
+            try {
+                javaField.set(object, value);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("Couldn't set " + javaField.getName() + " to " + value);
+            }
         }
 
         return object;
@@ -132,6 +147,7 @@ public final class Mapable {
     @NotNull
     private Map<String, Field> findApplicableFields(final @NotNull Class<?> clazz, final @NotNull Map<String, Field> fields) {
         debug("Searching for " + clazz);
+
         for (final Field field : clazz.getDeclaredFields()) {
             if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) continue;
             if (!field.trySetAccessible()) continue;
@@ -143,10 +159,13 @@ public final class Mapable {
             fields.put(mapTo != null && !mapTo.mapName().isEmpty() ? mapTo.mapName() : field.getName(), field);
         }
 
+        debug("Done");
+        debug("    Total " + fields);
+
         return clazz.getSuperclass() == null || clazz.getSuperclass() == Object.class ? fields : findApplicableFields(clazz.getSuperclass(), fields);
     }
 
-    private void debug(String str) {
+    public void debug(String str) {
         if (log) System.out.println(("[" + this.toString() + "] ") + str);
     }
 

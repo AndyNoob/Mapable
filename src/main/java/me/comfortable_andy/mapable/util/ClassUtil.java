@@ -4,11 +4,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.ReflectionFactory;
 
+import java.util.List;
+
 @SuppressWarnings("unchecked")
 public class ClassUtil {
 
+    public static final List<Class<?>> PRIMITIVES = List.of(double.class, float.class, long.class, int.class, short.class, char.class, byte.class, boolean.class);
+    public static final List<Class<?>> WRAPPERS = List.of(Double.class, Float.class, Long.class, Integer.class, Short.class, Character.class, Byte.class, Boolean.class, String.class);
+
     @Nullable
-    public static <T> Class<T> fromName(@Nullable final String name) {
+    public static <T> Class<T> fromNameOrNull(@Nullable final String name) {
         if (name == null) return null;
         try {
             return (Class<T>) Class.forName(name);

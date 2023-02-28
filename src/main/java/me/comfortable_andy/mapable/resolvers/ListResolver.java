@@ -4,7 +4,6 @@ import lombok.SneakyThrows;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
-import me.comfortable_andy.mapable.resolvers.data.SingleResolvedField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +19,7 @@ public class ListResolver implements IResolver {
     @Override
     @SneakyThrows
     public @Nullable ResolvedField resolve(@NotNull ResolvableField field) {
+        if (field.getValue() == null) return null;
         final Collection collection = (Collection) field.getValue();
         final Collection<Object> newCollection = this.make(field.getValue().getClass(), collection);
 
@@ -28,18 +28,24 @@ public class ListResolver implements IResolver {
             newCollection.add(resolvedField == null ? field.getInstance().asMap(o) : resolvedField.getResolved());
         }
 
-        return new SingleResolvedField(field.getInfo().getType(), newCollection, field.getInstance());
+        return new ResolvedField(field.getInfo().getType(), newCollection, field.getInstance());
     }
 
     @Override
-    public @Nullable Object unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
+    public @Nullable ResolvableField unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
+        final Class<?> elementType = info.getGenerics();
+
+        field.getInstance().debug("Element type is " + elementType);
+
+        if (elementType == null) return null;
+
         final Collection collection = (Collection) field.getResolved();
         final Collection newCollection = make(collection.getClass(), collection);
 
         for (Object o : collection) {
-            final ResolvedField resolvedField = new SingleResolvedField(o.getClass(), o, field.getInstance());
+            final ResolvedField resolvedField = new ResolvedField(elementType, o, field.getInstance());
 
-            Object unresolved = ResolverRegistry.getInstance().unresolve(o.getClass(), resolvedField, new FieldInfo(o.getClass()));
+            Object unresolved = ResolverRegistry.getInstance().unresolve(elementType, resolvedField, new FieldInfo(elementType));
 
             System.out.println(o);
 
@@ -54,7 +60,7 @@ public class ListResolver implements IResolver {
             newCollection.add(unresolved);
         }
 
-        return newCollection;
+        return new ResolvableField(info, newCollection, field.getInstance());
     }
 
     private Collection make(final Class clazz, final @NotNull Collection old) {
