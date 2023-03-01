@@ -1,4 +1,5 @@
 # Mapable - Everything can be a MAP!
+[![](https://jitpack.io/v/AndyNoob/Mapable.svg)](https://jitpack.io/#AndyNoob/Mapable)
 ## How it worky
 ### `Mapable#asMap`
 1. Receives input object `toMap`, and `@Nullable clazz` (the class of the object is inferred)
