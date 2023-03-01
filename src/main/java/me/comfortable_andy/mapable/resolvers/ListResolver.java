@@ -44,14 +44,12 @@ public class ListResolver implements IResolver {
 
         for (Object o : collection) {
             final ResolvedField resolvedField = new ResolvedField(elementType, o, field.getInstance());
+            final ResolvableField resolvableField = ResolverRegistry.getInstance().unresolve(elementType, resolvedField, new FieldInfo(elementType));
 
-            Object unresolved = ResolverRegistry.getInstance().unresolve(elementType, resolvedField, new FieldInfo(elementType));
-
-            System.out.println(o);
+            Object unresolved = resolvableField == null ? null : resolvableField.getValue();
 
             if (unresolved == null && o instanceof Map) {
                 try {
-                    System.out.println(o);
                     unresolved = field.getInstance().fromMap((Map<String, Object>) o);
                 } catch (ReflectiveOperationException ignored) {
                 }

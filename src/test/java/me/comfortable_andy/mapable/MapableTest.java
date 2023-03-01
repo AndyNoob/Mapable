@@ -82,6 +82,9 @@ public class MapableTest {
         }
     }
 
+    public record SomeRecord(int a, int b, int c) {
+    }
+
     //endregion
 
     private final Mapable annotationRequired = new MapableBuilder().setLog(true).setNeedAnnotation(true).createMapable(), annotationNotRequired = new MapableBuilder().setLog(true).setNeedAnnotation(false).createMapable(), mapSerializable = new MapableBuilder().setLog(true).setMapSerializable(true).createMapable(), dontMapSerializable = new MapableBuilder().setLog(true).setMapSerializable(false).createMapable();
@@ -127,7 +130,9 @@ public class MapableTest {
         final var obj = new ClassWithSerializable(new SerializableClass(59));
         final var map = mapSerializable.asMap(obj);
 
+        System.out.println();
         System.out.println(map);
+        System.out.println();
 
         assertTrue(map.get("thing") instanceof Map);
 
@@ -180,10 +185,10 @@ public class MapableTest {
     }
 
     @Test
-    public void fromMap_FedWithPrimitiveWrappers_Success() {
+    public void fromMap_FedWithPrimitiveWrappers_Success() throws ReflectiveOperationException {
         final Map<String, Object> map = new HashMap<>() {{
-            put("someInteger", Integer.valueOf(32523));
-            put("someDouble", Double.valueOf(23532.3225));
+            put("someInteger", 32523);
+            put("someDouble", 23532.3225);
             put("str", "urhgurhuirehegriuhgerhiuegruhi");
         }};
         final ClassWithoutAnnotation object = annotationNotRequired.fromMap(map, ClassWithoutAnnotation.class);
@@ -191,6 +196,14 @@ public class MapableTest {
         assertEquals(map.get("someDouble"), object.someDouble);
         assertEquals(map.get("someInteger"), object.someInteger);
         assertEquals(map.get("str"), object.str);
+    }
+
+    @Test
+    public void mapRoundHouse_Record_Success() throws ReflectiveOperationException {
+        final SomeRecord record = new SomeRecord(1, 3, 4);
+        final Map<String, Object> map = annotationNotRequired.asMap(record, SomeRecord.class);
+        System.out.println(map);
+        assertEquals(record, annotationNotRequired.fromMap(map, SomeRecord.class));
     }
 
 }

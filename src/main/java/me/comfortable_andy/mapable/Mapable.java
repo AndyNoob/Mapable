@@ -14,8 +14,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static me.comfortable_andy.mapable.MapableConstants.CLAZZ_KEY;
 import static me.comfortable_andy.mapable.util.ClassUtil.isPrimitiveOrString;
@@ -30,12 +29,12 @@ import static me.comfortable_andy.mapable.util.ClassUtil.isPrimitiveOrString;
 public final class Mapable {
 
     private final boolean needAnnotation;
-    private final boolean mapSerializable;
+    private final boolean dontMapSerializable;
     private final boolean log;
 
     public Mapable(boolean needAnnotation, boolean mapSerializable, boolean log) {
         this.needAnnotation = needAnnotation;
-        this.mapSerializable = mapSerializable;
+        this.dontMapSerializable = !mapSerializable;
         this.log = log;
     }
 
@@ -67,7 +66,7 @@ public final class Mapable {
             final ResolvableField field = new ResolvableField(info, javaField.get(toMap), this);
 
             if (field.getValue() == null) continue;
-            if (field.getValue() instanceof Serializable && !this.mapSerializable) {
+            if (field.getValue() instanceof Serializable && this.dontMapSerializable) {
                 debug("Mapped serializable " + field.getValue());
                 map.put(name, field.getValue());
                 continue;
@@ -95,49 +94,61 @@ public final class Mapable {
      * @return Deserialized object.
      * @see #asMap(Object)
      */
-    public <T> T fromMap(final @NotNull Map<String, Object> map, @Nullable Class<T> clazz) {
+    public <T> T fromMap(final @NotNull Map<String, Object> map, @Nullable Class<T> clazz) throws ReflectiveOperationException {
         if (clazz == null) clazz = ClassUtil.fromNameOrNull(String.valueOf(map.get(CLAZZ_KEY)));
         if (clazz == null) throw new IllegalStateException("Couldn't identify class!");
 
         if (isPrimitiveOrString(clazz) || clazz.isArray() || clazz.isAnnotation() || clazz.isEnum() || clazz.isAnonymousClass() || clazz.getPackageName().startsWith("java") || clazz.getPackageName().startsWith("sun"))
             throw new IllegalArgumentException(clazz + " is not supported (try wrapping it in your own class)!");
 
-        final T object = ClassUtil.construct(clazz, true);
+        final Map<Field, ResolvableField> resolvables = new LinkedHashMap<>();
 
-        if (object == null) throw new IllegalStateException("Couldn't initialize a desired object!");
-
-        for (final Map.Entry<String, Field> entry : findApplicableFields(clazz, new HashMap<>()).entrySet()) {
+        for (final Map.Entry<String, Field> entry : findApplicableFields(clazz, new LinkedHashMap<>()).entrySet()) {
             final String name = entry.getKey();
             final Field javaField = entry.getValue();
 
-            if (!map.containsKey(name)) continue;
-
-            Object value = map.get(name);
-
-            if (value instanceof Map) {
-                try {
-                    value = fromMap((Map<String, Object>) value);
-                } catch (ReflectiveOperationException ignored) {
-                }
-            } else if (!(value instanceof Serializable && !this.mapSerializable)) {
-                final FieldInfo info = new FieldInfo(javaField.getType()).setGenericsType(javaField.getGenericType());
-                final ResolvedField field = new ResolvedField(javaField.getType(), map.get(name), this);
-
-                try {
-                    final ResolvableField unresolved = ResolverRegistry.getInstance().unresolve(javaField.getType(), field, info);
-                    if (unresolved == null) continue;
-                    unresolved.applyToJavaField(object, javaField);
-                } catch (ReflectiveOperationException e) {
-                    throw new IllegalStateException("Couldn't set " + javaField.getName() + " to " + value + " using the unresolved value", e);
-                }
-
+            if (!map.containsKey(name)) {
+                resolvables.put(javaField, null);
                 continue;
             }
 
-            try {
-                javaField.set(object, value);
-            } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException("Couldn't set " + javaField.getName() + " to " + value);
+            Object value = map.get(name);
+            final FieldInfo info = new FieldInfo(javaField.getType()).setGenericsType(javaField.getGenericType());
+
+            if (dontMapSerializable &&
+                    Serializable.class.isAssignableFrom(javaField.getType()) &&
+                    javaField.getType().isAssignableFrom(value.getClass())) {
+                debug(name + " is serializable!");
+                resolvables.put(javaField, new ResolvableField(info, value, this));
+                continue;
+            }
+
+            if (value instanceof Map) {
+                debug(name + " is a map!");
+                resolvables.put(javaField, new ResolvableField(info, fromMap((Map<String, Object>) value), this));
+            } else { // Attempt to resolve
+                debug("Resolving " + javaField);
+                final ResolvedField field = new ResolvedField(javaField.getType(), map.get(name), this);
+                final ResolvableField resolvableField = ResolverRegistry.getInstance().unresolve(javaField.getType(), field, info);
+
+                debug("    Done! " + resolvableField);
+
+                resolvables.put(javaField, resolvableField);
+            }
+        }
+
+        final T object;
+
+        if (ClassUtil.isRecord(clazz)) {
+            object = (T) clazz.getDeclaredConstructors()[0].newInstance(resolvables.values().stream().map(field -> field == null ? null : field.getValue()).toArray());
+        } else {
+            object = ClassUtil.construct(clazz, true);
+
+            if (object == null) throw new IllegalStateException("Couldn't initialize a desired object!");
+
+            for (final Map.Entry<Field, ResolvableField> entry : resolvables.entrySet()) {
+                if (entry.getValue() == null) continue;
+                entry.getValue().applyToJavaField(object, entry.getKey());
             }
         }
 

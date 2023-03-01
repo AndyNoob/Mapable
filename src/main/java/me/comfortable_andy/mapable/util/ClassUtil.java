@@ -12,6 +12,12 @@ public class ClassUtil {
     public static final List<Class<?>> PRIMITIVES = List.of(double.class, float.class, long.class, int.class, short.class, char.class, byte.class, boolean.class);
     public static final List<Class<?>> WRAPPERS = List.of(Double.class, Float.class, Long.class, Integer.class, Short.class, Character.class, Byte.class, Boolean.class, String.class);
 
+    private static final Class<?> RECORD_CLASS;
+
+    static {
+        RECORD_CLASS = fromNameOrNull("java.lang.Record");
+    }
+
     @Nullable
     public static <T> Class<T> fromNameOrNull(@Nullable final String name) {
         if (name == null) return null;
@@ -46,6 +52,11 @@ public class ClassUtil {
                 type == Double.class || type == Float.class || type == Long.class ||
                 type == Integer.class || type == Short.class || type == Character.class ||
                 type == Byte.class || type == Boolean.class || type == String.class;
+    }
+
+    public static boolean isRecord(@NotNull final Class<?> clazz) {
+        if (RECORD_CLASS == null) return false;
+        return RECORD_CLASS.isAssignableFrom(clazz);
     }
 
 }
