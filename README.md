@@ -1,15 +1,11 @@
 # Mapable - Everything can be a MAP!
 [![](https://jitpack.io/v/AndyNoob/Mapable.svg)](https://jitpack.io/#AndyNoob/Mapable)
+## Why? 🤔
+Why did I make this? TBH, I don't even know anymore. But it was probably because I wanted to for some reason handle my own serializing as opposed to just using GSON.
 ## How it worky
-### `Mapable#asMap`
-1. Receives input object `toMap`, and `@Nullable clazz` (the class of the object is inferred)
-2. Collects all fields (including superclasses) via Reflection
-   1. Checks if a `IResolver` is registered for this type
-      1. **Yes**
-         1. Calls [`IResolver#resolve`](src/main/java/me/comfortable_andy/mapable/resolvers/IResolver.java)
-      2. **No**
-         1. Calls [`Mapable#asMap`](#mapableasmap);
-3. Done!
+The `Mapable` class has two main methods, `asMap` and `fromMap`. If we're talking mathematics, these two methods would be inverses of each other. Each can take the output of the other, outputting the original input. This means you could, if you don't care about your stuff breaking, use this like any other serializing library (of course needing an extra step of handling saving the maps).
+
+Behind the back, all fields in the inputted object are ran through what I call resolvers, which is just a modular way to be able to handle different immediately resolvable (e.g. primitives, arrays, lists, enums) types (this also means that you can make a resolver for any class you want).
 ## Contributing
 Thank you for risking your personal sanity by considering contributions to this project!
 
