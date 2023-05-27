@@ -2,6 +2,7 @@ package me.comfortable_andy.mapable;
 
 import lombok.NonNull;
 import lombok.ToString;
+import lombok.extern.java.Log;
 import me.comfortable_andy.mapable.resolvers.ResolverRegistry;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
@@ -28,16 +29,17 @@ import static me.comfortable_andy.mapable.util.ClassUtil.isPrimitiveOrString;
  */
 @SuppressWarnings("unchecked")
 @ToString
+@Log
 public final class Mapable {
 
     private final boolean needAnnotation;
     private final boolean dontMapSerializable;
-    private final boolean log;
+    private final boolean shouldLog;
 
     public Mapable(boolean needAnnotation, boolean mapSerializable, boolean log) {
         this.needAnnotation = needAnnotation;
         this.dontMapSerializable = !mapSerializable;
-        this.log = log;
+        this.shouldLog = log;
     }
 
     public Map<String, Object> asMap(@NonNull final Object toMap) throws ReflectiveOperationException {
@@ -178,7 +180,7 @@ public final class Mapable {
     }
 
     public void debug(Supplier<String> str) {
-        if (log) System.out.println(("[" + this.toString() + "] ") + str.get());
+        if (shouldLog) log.info(("[" + this + "] ") + str.get());
     }
 
     /**
@@ -189,7 +191,7 @@ public final class Mapable {
      * @see #fromMap(Map, Class)
      */
     @Retention(RetentionPolicy.RUNTIME)
-    public static @interface MapMe {
+    public @interface MapMe {
         /**
          * Default variable name
          */
