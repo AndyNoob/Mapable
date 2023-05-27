@@ -5,8 +5,6 @@ import me.comfortable_andy.mapable.Mapable;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -23,22 +21,22 @@ class ResolverRegistryTest {
         private ResolverRegistry.ResolverPriority priority = ResolverRegistry.ResolverPriority.HIGH;
 
         @Override
-        public @NotNull List<Class<?>> getResolvableTypes() {
+        public List<Class<?>> getResolvableTypes() {
             return Collections.singletonList(Object.class);
         }
 
         @Override
-        public @NotNull ResolverRegistry.ResolverPriority getPriority() {
+        public ResolverRegistry.ResolverPriority getPriority() {
             return priority;
         }
 
         @Override
-        public @Nullable ResolvedField resolve(@NotNull ResolvableField field) {
+        public ResolvedField resolve(ResolvableField field) {
             throw new RuntimeException();
         }
 
         @Override
-        public @Nullable ResolvableField unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
+        public ResolvableField unresolve(ResolvedField field, FieldInfo info) {
             throw new RuntimeException();
         }
     }

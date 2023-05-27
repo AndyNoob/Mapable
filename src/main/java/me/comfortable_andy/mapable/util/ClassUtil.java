@@ -1,7 +1,5 @@
 package me.comfortable_andy.mapable.util;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import sun.reflect.ReflectionFactory;
 
 import java.util.List;
@@ -18,8 +16,7 @@ public class ClassUtil {
         RECORD_CLASS = fromNameOrNull("java.lang.Record");
     }
 
-    @Nullable
-    public static <T> Class<T> fromNameOrNull(@Nullable final String name) {
+    public static <T> Class<T> fromNameOrNull(final String name) {
         if (name == null) return null;
         try {
             return (Class<T>) Class.forName(name);
@@ -29,8 +26,7 @@ public class ClassUtil {
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <T> T construct(@NotNull final Class<T> clazz, final boolean bruteForce) {
+    public static <T> T construct(final Class<T> clazz, final boolean bruteForce) {
         T object = null;
 
         try {
@@ -47,14 +43,14 @@ public class ClassUtil {
         return object;
     }
 
-    public static boolean isPrimitiveOrString(@NotNull final Class<?> type) {
+    public static boolean isPrimitiveOrString(final Class<?> type) {
         return (type.isPrimitive() && type != void.class) ||
                 type == Double.class || type == Float.class || type == Long.class ||
                 type == Integer.class || type == Short.class || type == Character.class ||
                 type == Byte.class || type == Boolean.class || type == String.class;
     }
 
-    public static boolean isRecord(@NotNull final Class<?> clazz) {
+    public static boolean isRecord(final Class<?> clazz) {
         if (RECORD_CLASS == null) return false;
         return RECORD_CLASS.isAssignableFrom(clazz);
     }

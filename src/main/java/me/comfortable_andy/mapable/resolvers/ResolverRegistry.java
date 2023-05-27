@@ -1,10 +1,9 @@
 package me.comfortable_andy.mapable.resolvers;
 
+import lombok.NonNull;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,7 +24,7 @@ public final class ResolverRegistry {
     }
 
 
-    public void register(final @NotNull IResolver resolver) {
+    public void register(final @NonNull IResolver resolver) {
         this.resolvers.add(resolver);
     }
 
@@ -33,23 +32,20 @@ public final class ResolverRegistry {
         this.resolvers.addAll(List.of(resolvers));
     }
 
-    public boolean unregister(final @NotNull Class<?> clazz) {
+    public boolean unregister(final @NonNull Class<?> clazz) {
         return this.resolvers.removeIf(resolver -> resolver.getResolvableTypes().stream().anyMatch(clazs -> clazs.isAssignableFrom(clazz)));
     }
 
-    @Nullable
-    public <R> R ifPresent(final @NotNull Class<?> clazz, @NotNull final Function<List<IResolver>, R> function) {
+    public <R> R ifPresent(final @NonNull Class<?> clazz, @NonNull final Function<List<IResolver>, R> function) {
         final List<IResolver> resolver = this.resolvers.stream().filter(iResolver -> iResolver.getResolvableTypes().stream().anyMatch(clazs -> clazs.isAssignableFrom(clazz))).sorted(Comparator.comparing(IResolver::getPriority)).collect(Collectors.toList());
         return function.apply(resolver);
     }
 
-    @Nullable
-    public ResolvedField resolve(final @NotNull Class<?> clazz, final @NotNull ResolvableField field) {
+    public ResolvedField resolve(final @NonNull Class<?> clazz, final @NonNull ResolvableField field) {
         return ifPresent(clazz, resolvers -> resolvers.stream().map(resolver -> resolver.resolve(field)).filter(Objects::nonNull).findFirst().orElse(null));
     }
 
-    @Nullable
-    public <T> ResolvableField unresolve(final @NotNull Class<T> clazz, final @NotNull ResolvedField field, final @NotNull FieldInfo info) {
+    public <T> ResolvableField unresolve(final @NonNull Class<T> clazz, final @NonNull ResolvedField field, final @NonNull FieldInfo info) {
         return ifPresent(clazz, resolvers -> resolvers.stream().map(resolver -> resolver.unresolve(field, info)).filter(Objects::nonNull).findFirst().orElse(null));
     }
 

@@ -1,10 +1,9 @@
 package me.comfortable_andy.mapable.resolvers.data;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.ToString;
 import me.comfortable_andy.mapable.Mapable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 
@@ -15,16 +14,16 @@ import static me.comfortable_andy.mapable.util.ClassUtil.WRAPPERS;
 public class ResolvableField {
 
     private final FieldInfo info;
-    private final @Nullable Object value;
+    private final Object value;
     private final Mapable instance;
 
-    public ResolvableField(@NotNull final FieldInfo info, @Nullable final Object value, @NotNull final Mapable instance) {
+    public ResolvableField(@NonNull final FieldInfo info, /* @Nullable */ final Object value, @NonNull final Mapable instance) {
         this.info = info;
         this.value = value;
         this.instance = instance;
     }
 
-    public void applyToJavaField(@NotNull final Object owning, @NotNull final Field javaField) throws IllegalAccessException {
+    public void applyToJavaField(@NonNull final Object owning, @NonNull final Field javaField) throws IllegalAccessException {
         if (value == null) return;
         if (!javaField.trySetAccessible()) throw new IllegalStateException("Could access " + javaField);
 

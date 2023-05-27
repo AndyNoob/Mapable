@@ -1,24 +1,23 @@
 package me.comfortable_andy.mapable.resolvers;
 
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ListResolver implements IResolver {
     @Override
-    public @NotNull List<Class<?>> getResolvableTypes() {
+    public @NonNull List<Class<?>> getResolvableTypes() {
         return Collections.singletonList(Collection.class);
     }
 
     @Override
     @SneakyThrows
-    public @Nullable ResolvedField resolve(@NotNull ResolvableField field) {
+    public ResolvedField resolve(@NonNull ResolvableField field) {
         if (field.getValue() == null) return null;
         final Collection collection = (Collection) field.getValue();
         final Collection<Object> newCollection = this.make(field.getValue().getClass(), collection);
@@ -32,10 +31,10 @@ public class ListResolver implements IResolver {
     }
 
     @Override
-    public @Nullable ResolvableField unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
+    public ResolvableField unresolve(@NonNull ResolvedField field, @NonNull FieldInfo info) {
         final Class<?> elementType = info.getGenerics();
 
-        field.getInstance().debug("Element type is " + elementType);
+        field.getInstance().debug(() -> "Element type is " + elementType);
 
         if (elementType == null) return null;
 
@@ -61,11 +60,10 @@ public class ListResolver implements IResolver {
         return new ResolvableField(info, newCollection, field.getInstance());
     }
 
-    private Collection make(final Class clazz, final @NotNull Collection old) {
+    private Collection make(final Class clazz, final @NonNull Collection old) {
         try {
              return  (Collection<Object>) clazz.getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            System.out.println("Couldn't make a new collection from the existing value's class, defaulting with ArrayList");
             return new ArrayList<>(old.size());
         }
     }

@@ -1,20 +1,22 @@
 package me.comfortable_andy.mapable;
 
+import lombok.NonNull;
 import lombok.ToString;
 import me.comfortable_andy.mapable.resolvers.ResolverRegistry;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
 import me.comfortable_andy.mapable.util.ClassUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 import static me.comfortable_andy.mapable.MapableConstants.CLAZZ_KEY;
 import static me.comfortable_andy.mapable.util.ClassUtil.isPrimitiveOrString;
@@ -38,7 +40,7 @@ public final class Mapable {
         this.log = log;
     }
 
-    public Map<String, Object> asMap(@NotNull final Object toMap) throws ReflectiveOperationException {
+    public Map<String, Object> asMap(@NonNull final Object toMap) throws ReflectiveOperationException {
         return asMap(toMap, null);
     }
 
@@ -49,8 +51,7 @@ public final class Mapable {
      * @param toMap The object used to map (null if clazz is an interface or annotation).
      * @return Serialized data in map.
      */
-    @Nullable
-    public <T> Map<String, Object> asMap(@Nullable final T toMap, @Nullable Class<T> clazz) throws ReflectiveOperationException {
+    public <T> Map<String, Object> asMap(final T toMap, Class<T> clazz) throws ReflectiveOperationException {
         if (toMap == null) return null;
         if (clazz == null) clazz = (Class<T>) toMap.getClass();
 
@@ -67,14 +68,14 @@ public final class Mapable {
 
             if (field.getValue() == null) continue;
             if (field.getValue() instanceof Serializable && this.dontMapSerializable) {
-                debug("Mapped serializable " + field.getValue());
+                debug(() -> "Mapped serializable " + field.getValue());
                 map.put(name, field.getValue());
                 continue;
             }
 
             final ResolvedField resolvedField = ResolverRegistry.getInstance().resolve(javaField.getType(), field);
 
-            if (resolvedField == null) debug("Couldn't resolve " + javaField);
+            if (resolvedField == null) debug(() -> "Couldn't resolve " + javaField);
 
             map.put(name, resolvedField == null ? asMap(field.getValue()) : resolvedField.getResolved());
         }
@@ -82,7 +83,7 @@ public final class Mapable {
         return map;
     }
 
-    public Object fromMap(final @NotNull Map<String, Object> map) throws ReflectiveOperationException {
+    public Object fromMap(final @NonNull Map<String, Object> map) throws ReflectiveOperationException {
         return fromMap(map, null);
     }
 
@@ -94,7 +95,7 @@ public final class Mapable {
      * @return Deserialized object.
      * @see #asMap(Object)
      */
-    public <T> T fromMap(final @NotNull Map<String, Object> map, @Nullable Class<T> clazz) throws ReflectiveOperationException {
+    public <T> T fromMap(final @NonNull Map<String, Object> map, Class<T> clazz) throws ReflectiveOperationException {
         if (clazz == null) clazz = ClassUtil.fromNameOrNull(String.valueOf(map.get(CLAZZ_KEY)));
         if (clazz == null) throw new IllegalStateException("Couldn't identify class!");
 
@@ -118,20 +119,20 @@ public final class Mapable {
             if (dontMapSerializable &&
                     Serializable.class.isAssignableFrom(javaField.getType()) &&
                     javaField.getType().isAssignableFrom(value.getClass())) {
-                debug(name + " is serializable!");
+                debug(() -> name + " is serializable!");
                 resolvables.put(javaField, new ResolvableField(info, value, this));
                 continue;
             }
 
             if (value instanceof Map) {
-                debug(name + " is a map!");
+                debug(() -> name + " is a map!");
                 resolvables.put(javaField, new ResolvableField(info, fromMap((Map<String, Object>) value), this));
             } else { // Attempt to resolve
-                debug("Resolving " + javaField);
+                debug(() -> "Resolving " + javaField);
                 final ResolvedField field = new ResolvedField(javaField.getType(), map.get(name), this);
                 final ResolvableField resolvableField = ResolverRegistry.getInstance().unresolve(javaField.getType(), field, info);
 
-                debug("    Done! " + resolvableField);
+                debug(() -> "    Done! " + resolvableField);
 
                 resolvables.put(javaField, resolvableField);
             }
@@ -155,9 +156,9 @@ public final class Mapable {
         return object;
     }
 
-    @NotNull
-    private Map<String, Field> findApplicableFields(final @NotNull Class<?> clazz, final @NotNull Map<String, Field> fields) {
-        debug("Searching for " + clazz);
+    @NonNull
+    private Map<String, Field> findApplicableFields(final @NonNull Class<?> clazz, final @NonNull Map<String, Field> fields) {
+        debug(() -> "Searching for " + clazz);
 
         for (final Field field : clazz.getDeclaredFields()) {
             if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) continue;
@@ -170,14 +171,14 @@ public final class Mapable {
             fields.put(mapTo != null && !mapTo.mapName().isEmpty() ? mapTo.mapName() : field.getName(), field);
         }
 
-        debug("Done");
-        debug("    Total " + fields);
+        debug(() -> "Done");
+        debug(() -> "    Total " + fields);
 
         return clazz.getSuperclass() == null || clazz.getSuperclass() == Object.class ? fields : findApplicableFields(clazz.getSuperclass(), fields);
     }
 
-    public void debug(String str) {
-        if (log) System.out.println(("[" + this.toString() + "] ") + str);
+    public void debug(Supplier<String> str) {
+        if (log) System.out.println(("[" + this.toString() + "] ") + str.get());
     }
 
     /**

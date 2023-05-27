@@ -6,14 +6,8 @@
 
   <groupId>me.comfortable_andy</groupId>
   <artifactId>Mapable</artifactId>
-  <version>3.4.0</version>
+  <version>3.4.1</version>
   <dependencies>
-    <dependency>
-      <groupId>org.jetbrains</groupId>
-      <artifactId>annotations</artifactId>
-      <version>23.0.0</version>
-      <scope>compile</scope>
-    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -46,5 +40,12 @@
       </plugin>
     </plugins>
   </build>
+
+  <distributionManagement>
+    <repository>
+      <id>brad-repo</id>
+      <url>https://repo.bb1.fun/andy</url>
+    </repository>
+  </distributionManagement>
 
 </project>

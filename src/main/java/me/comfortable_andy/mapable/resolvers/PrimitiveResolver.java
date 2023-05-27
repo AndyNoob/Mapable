@@ -1,10 +1,9 @@
 package me.comfortable_andy.mapable.resolvers;
 
+import lombok.NonNull;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
 import me.comfortable_andy.mapable.resolvers.data.ResolvedField;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,17 +16,17 @@ public class PrimitiveResolver implements IResolver {
     private static final List<Class<?>> TARGET = Stream.concat(PRIMITIVES.stream(), WRAPPERS.stream()).collect(Collectors.toList());
 
     @Override
-    public @NotNull List<Class<?>> getResolvableTypes() {
+    public @NonNull List<Class<?>> getResolvableTypes() {
         return TARGET;
     }
 
     @Override
-    public @Nullable ResolvedField resolve(@NotNull ResolvableField field) {
+    public ResolvedField resolve(@NonNull ResolvableField field) {
         return new ResolvedField(field.getInfo().getType(), field.getValue(), field.getInstance());
     }
 
     @Override
-    public @Nullable ResolvableField unresolve(@NotNull ResolvedField field, @NotNull FieldInfo info) {
+    public ResolvableField unresolve(@NonNull ResolvedField field, @NonNull FieldInfo info) {
         return new ResolvableField(info, field.getResolved(), field.getInstance());
     }
 }
