@@ -25,7 +25,7 @@ public class ResolvableField {
 
     public void applyToJavaField(@NonNull final Object owning, @NonNull final Field javaField) throws IllegalAccessException {
         if (value == null) return;
-        if (!javaField.trySetAccessible()) throw new IllegalStateException("Could access " + javaField);
+        if (!javaField.trySetAccessible()) throw new IllegalStateException("Couldn't access " + javaField);
 
         if (value.getClass() != String.class && WRAPPERS.contains(value.getClass())) {
             switch (value.getClass().getSimpleName()) {
