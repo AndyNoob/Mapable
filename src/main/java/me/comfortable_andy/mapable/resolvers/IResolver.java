@@ -11,6 +11,10 @@ public interface IResolver {
 
     @NonNull List<Class<?>> getResolvableTypes();
 
+    default boolean canResolve(@NonNull final Class<?> clazz) {
+        return getResolvableTypes().stream().anyMatch(resolvableClazz -> resolvableClazz.isAssignableFrom(clazz));
+    }
+
     @NonNull default ResolverRegistry.ResolverPriority getPriority() {
         return ResolverRegistry.ResolverPriority.DEFAULT;
     }

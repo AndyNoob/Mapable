@@ -5,6 +5,7 @@ import lombok.NonNull;
 import lombok.ToString;
 import me.comfortable_andy.mapable.Mapable;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
 import static me.comfortable_andy.mapable.util.ClassUtil.WRAPPERS;
@@ -53,4 +54,34 @@ public class ResolvableField {
             }
         } else javaField.set(owning, value);
     }
+
+    public void applyToArray(@NonNull final Object owning, final int index) {
+        if (value == null) return;
+        if (value.getClass() != String.class && WRAPPERS.contains(value.getClass())) {
+            switch (value.getClass().getSimpleName()) {
+                case "Double":
+                    Array.setDouble(owning, index, (double) value);
+                    break;
+                case "Float":
+                    Array.setFloat(owning, index, (float) value);
+                    break;
+                case "Long":
+                    Array.setLong(owning, index, (long) value);
+                    break;
+                case "Integer":
+                    Array.setInt(owning, index, (int) value);
+                    break;
+                case "Short":
+                    Array.setShort(owning, index, (short) value);
+                    break;
+                case "Character":
+                    Array.setChar(owning, index, (char) value);
+                    break;
+                case "Byte":
+                    Array.setByte(owning, index, (byte) value);
+                    break;
+            }
+        } else Array.set(owning, index, value);
+    }
+
 }

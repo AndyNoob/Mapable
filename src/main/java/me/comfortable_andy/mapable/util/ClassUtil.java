@@ -55,4 +55,8 @@ public class ClassUtil {
         return RECORD_CLASS.isAssignableFrom(clazz);
     }
 
+    public static boolean isASuperclassOfB(final Class<?> a, final Class<?> b) {
+        return a.isAssignableFrom(b);
+    }
+
 }

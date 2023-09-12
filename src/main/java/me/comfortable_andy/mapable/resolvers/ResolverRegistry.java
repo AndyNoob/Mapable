@@ -37,7 +37,7 @@ public final class ResolverRegistry {
     }
 
     public <R> R ifPresent(final @NonNull Class<?> clazz, @NonNull final Function<List<IResolver>, R> function) {
-        final List<IResolver> resolver = this.resolvers.stream().filter(iResolver -> iResolver.getResolvableTypes().stream().anyMatch(clazs -> clazs.isAssignableFrom(clazz))).sorted(Comparator.comparing(IResolver::getPriority)).collect(Collectors.toList());
+        final List<IResolver> resolver = this.resolvers.stream().filter(iResolver -> iResolver.canResolve(clazz)).sorted(Comparator.comparing(IResolver::getPriority)).collect(Collectors.toList());
         return function.apply(resolver);
     }
 

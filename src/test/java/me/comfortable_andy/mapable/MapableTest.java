@@ -85,6 +85,10 @@ public class MapableTest {
     public record SomeRecord(int a, int b, int c) {
     }
 
+    public static class ClassWithPrimitiveArray {
+        private final int[] array = new int[] { 1, 2, 3, 4, 5 };
+    }
+
     //endregion
 
     private final Mapable annotationRequired = new MapableBuilder().setLog(true).setNeedAnnotation(true).createMapable(), annotationNotRequired = new MapableBuilder().setLog(true).setNeedAnnotation(false).createMapable(), mapSerializable = new MapableBuilder().setLog(true).setMapSerializable(true).createMapable(), dontMapSerializable = new MapableBuilder().setLog(true).setMapSerializable(false).createMapable();
@@ -161,7 +165,7 @@ public class MapableTest {
 
     @Test
     public void mapRoundHouse_ArrayAndListClassWithoutAnnotation_WithoutAnnotation_Fail() throws ReflectiveOperationException {
-        final ClassWithoutAnnotation[] array = new ClassWithoutAnnotation[] {
+        final ClassWithoutAnnotation[] array = new ClassWithoutAnnotation[]{
                 new ClassWithoutAnnotation(1, 2.2, "3"),
                 new ClassWithoutAnnotation(2, 3.2, "2"),
                 new ClassWithoutAnnotation(3, 4.2, "1"),
@@ -204,6 +208,14 @@ public class MapableTest {
         final Map<String, Object> map = annotationNotRequired.asMap(record, SomeRecord.class);
         System.out.println(map);
         assertEquals(record, annotationNotRequired.fromMap(map, SomeRecord.class));
+    }
+
+    @Test
+    public void mapRoundHouse_PrimitiveArray_Success() throws ReflectiveOperationException {
+        final ClassWithPrimitiveArray primitiveArray = new ClassWithPrimitiveArray();
+        final Map<String, Object> map = annotationNotRequired.asMap(primitiveArray);
+        System.out.println(map);
+        assertArrayEquals(primitiveArray.array, annotationNotRequired.fromMap(map, ClassWithPrimitiveArray.class).array);
     }
 
 }
