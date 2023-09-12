@@ -25,7 +25,7 @@ public class ArrayResolver implements IResolver {
         final Object array = field.getValue();
         if (array == null) return null;
         final int length = Array.getLength(array);
-        final Object newArray = Array.newInstance(array.getClass().getComponentType(), Array.getLength(array));
+        final Object newArray = Array.newInstance(array.getClass().getComponentType(), length);
         for (int i = 0; i < length; i++) {
             final Object unresolved = Array.get(array, i);
             final ResolvableField currentItem = new ResolvableField(
@@ -35,7 +35,8 @@ public class ArrayResolver implements IResolver {
             );
             Array.set(
                     newArray, i,
-                    ResolverRegistry.getInstance().resolve(unresolved.getClass(), currentItem).getResolved()
+                    ResolverRegistry.getInstance()
+                            .resolve(unresolved.getClass(), currentItem).getResolved()
             );
         }
         return new ResolvedField(field.getInfo().getType(), newArray, field.getInstance());
