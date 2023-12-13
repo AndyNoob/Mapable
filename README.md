@@ -1,5 +1,6 @@
 # Mapable - Everything can be a MAP!
-[![](https://jitpack.io/v/AndyNoob/Mapable.svg)](https://jitpack.io/#AndyNoob/Mapable)
+[![](https://jitpack.io/v/AndyNoob/Mapable.svg)](https://jitpack.io/#AndyNoob/Mapable)<br>
+[![discord banner](https://discordapp.com/api/guilds/1184300001405440030/widget.png?style=banner2)](https://discord.gg/hmqspPuhHd)
 ## Why? 🤔
 Why did I make this? TBH, I don't even know anymore. But it was probably because I wanted to for some reason handle my own serializing as opposed to just using GSON.
 ## How it worky
