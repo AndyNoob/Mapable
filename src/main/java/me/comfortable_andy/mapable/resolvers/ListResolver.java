@@ -32,7 +32,7 @@ public class ListResolver implements IResolver {
 
     @Override
     public ResolvableField unresolve(@NonNull ResolvedField field, @NonNull FieldInfo info) {
-        final Class<?> elementType = info.getGenerics();
+        final Class<?> elementType = info.getGenerics()[0];
 
         field.getInstance().debug(() -> "Element type is " + elementType);
 
@@ -62,7 +62,7 @@ public class ListResolver implements IResolver {
 
     private Collection make(final Class clazz, final @NonNull Collection old) {
         try {
-             return  (Collection<Object>) clazz.getDeclaredConstructor().newInstance();
+            return (Collection<Object>) clazz.getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
             return new ArrayList<>(old.size());
         }

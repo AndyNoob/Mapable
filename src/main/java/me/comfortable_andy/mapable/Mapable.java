@@ -2,7 +2,6 @@ package me.comfortable_andy.mapable;
 
 import lombok.NonNull;
 import lombok.ToString;
-import lombok.extern.java.Log;
 import me.comfortable_andy.mapable.resolvers.ResolverRegistry;
 import me.comfortable_andy.mapable.resolvers.data.FieldInfo;
 import me.comfortable_andy.mapable.resolvers.data.ResolvableField;
@@ -20,7 +19,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static me.comfortable_andy.mapable.MapableConstants.CLAZZ_KEY;
-import static me.comfortable_andy.mapable.util.ClassUtil.isPrimitiveOrString;
 
 /**
  * Will NOT attempt to convert maps into other maps
@@ -29,7 +27,6 @@ import static me.comfortable_andy.mapable.util.ClassUtil.isPrimitiveOrString;
  */
 @SuppressWarnings("unchecked")
 @ToString
-@Log
 public final class Mapable {
 
     private final boolean needAnnotation;
@@ -100,9 +97,9 @@ public final class Mapable {
     public <T> T fromMap(final @NonNull Map<String, Object> map, Class<T> clazz) throws ReflectiveOperationException {
         if (clazz == null) clazz = ClassUtil.fromNameOrNull(String.valueOf(map.get(CLAZZ_KEY)));
         if (clazz == null) throw new IllegalStateException("Couldn't identify class!");
-
+/*
         if (isPrimitiveOrString(clazz) || clazz.isArray() || clazz.isAnnotation() || clazz.isEnum() || clazz.isAnonymousClass() || clazz.getPackageName().startsWith("java") || clazz.getPackageName().startsWith("sun"))
-            throw new IllegalArgumentException(clazz + " is not supported (try wrapping it in your own class)!");
+            throw new IllegalArgumentException(clazz + " is not supported (try wrapping it in your own class)!");*/
 
         final Map<Field, ResolvableField> resolvables = new LinkedHashMap<>();
 
@@ -126,10 +123,18 @@ public final class Mapable {
                 continue;
             }
 
+            boolean isUnresolved = false;
+
             if (value instanceof Map) {
                 debug(() -> name + " is a map!");
-                resolvables.put(javaField, new ResolvableField(info, fromMap((Map<String, Object>) value), this));
-            } else { // Attempt to resolve
+                try {
+                    resolvables.put(javaField, new ResolvableField(info, fromMap((Map<String, Object>) value), this));
+                    isUnresolved = true;
+                } catch (Exception ignored) {
+                }
+            }
+
+            if (!isUnresolved){ // Attempt to resolve
                 debug(() -> "Resolving " + javaField);
                 final ResolvedField field = new ResolvedField(javaField.getType(), map.get(name), this);
                 final ResolvableField resolvableField = ResolverRegistry.getInstance().unresolve(javaField.getType(), field, info);
@@ -140,14 +145,18 @@ public final class Mapable {
             }
         }
 
-        final T object;
+        T object;
 
         if (ClassUtil.isRecord(clazz)) {
             object = (T) clazz.getDeclaredConstructors()[0].newInstance(resolvables.values().stream().map(field -> field == null ? null : field.getValue()).toArray());
         } else {
-            object = ClassUtil.construct(clazz, true);
+            try {
+                object = ClassUtil.construct(clazz, true);
+            } catch (InstantiationError e) {
+                object = null;
+            }
 
-            if (object == null) throw new IllegalStateException("Couldn't initialize a desired object!");
+            if (object == null) throw new IllegalArgumentException("Couldn't initialize a desired object!");
 
             for (final Map.Entry<Field, ResolvableField> entry : resolvables.entrySet()) {
                 if (entry.getValue() == null) continue;
@@ -180,7 +189,7 @@ public final class Mapable {
     }
 
     public void debug(Supplier<String> str) {
-        if (shouldLog) log.info(("[" + this + "] ") + str.get());
+        if (shouldLog) System.out.println(("[" + this + "] ") + str.get());
     }
 
     /**

@@ -20,7 +20,7 @@ public final class ResolverRegistry {
     private final List<IResolver> resolvers = new CopyOnWriteArrayList<>();
 
     private ResolverRegistry() {
-        registerAll(new PrimitiveResolver(), new EnumResolver(), new ArrayResolver(), new ListResolver());
+        registerAll(new PrimitiveResolver(), new EnumResolver(), new ArrayResolver(), new ListResolver(), new MapResolver());
     }
 
 

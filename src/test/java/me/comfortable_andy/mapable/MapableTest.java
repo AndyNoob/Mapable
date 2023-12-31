@@ -1,6 +1,9 @@
 package me.comfortable_andy.mapable;
 
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import me.comfortable_andy.mapable.resolvers.ResolverRegistry;
 import org.junit.Test;
 
@@ -34,10 +37,10 @@ public class MapableTest {
         private final RandomEnum enumThingy;
     }
 
+    @Getter
     @RequiredArgsConstructor
     @ToString
     public static class ClassWithSerializable {
-        @Getter
         private final SerializableClass thing;
 
         @Override // Lombok decided to not work
@@ -216,6 +219,27 @@ public class MapableTest {
         final Map<String, Object> map = annotationNotRequired.asMap(primitiveArray);
         System.out.println(map);
         assertArrayEquals(primitiveArray.array, annotationNotRequired.fromMap(map, ClassWithPrimitiveArray.class).array);
+    }
+
+    @EqualsAndHashCode
+    @ToString
+    public static class ClassWithAMapThing {
+        private final Map<String, ClassWithoutAnnotation> map = new HashMap<>();
+
+        public ClassWithAMapThing() {
+            this.map.put("thing1", new ClassWithoutAnnotation(12, 3.435, "y'all sucks"));
+            this.map.put("thing2", new ClassWithoutAnnotation(66, 6.66, "they suck"));
+            this.map.put("thing3", new ClassWithoutAnnotation(9, 812.831, "thing sucks"));
+            this.map.put("thing4", new ClassWithoutAnnotation(1034, 9.42435, "bro sucks"));
+        }
+    }
+    @Test
+    public void mapRoundHouse_Maps_Success() throws ReflectiveOperationException {
+        final ClassWithAMapThing mapThing = new ClassWithAMapThing();
+        final Map<String, Object> thing = mapSerializable.asMap(mapThing);
+        System.out.println(thing);
+        final ClassWithAMapThing back = mapSerializable.fromMap(thing, ClassWithAMapThing.class);
+        assertEquals(mapThing, back);
     }
 
 }
